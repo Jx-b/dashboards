@@ -69,6 +69,7 @@ class Dash_PCA(dash.Dash):
             dcc.Graph(
                     id='3d scatter',
                     figure= self.plot_pca(self.projected_data, self.variance_explained, self.labels.iloc[:,0]),
+                    config=dict(showSendToCloud=True),
                     style= {'grid-area': 'pca'}
             ),
             
@@ -133,6 +134,7 @@ class Dash_PCA(dash.Dash):
                         marker= {
                             'size': 10,
                             'color': color_by,
+                            'colorscale': 'Viridis',
                             'opacity': .8,
                         },
                         name= color_by.name

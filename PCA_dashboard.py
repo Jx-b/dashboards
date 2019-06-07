@@ -278,7 +278,7 @@ def run_dashboard(data, labels):
                 'color': 'white'
             }]
     
-    pca_app.run_server(debug=True)
+    pca_app.run_server(debug=False)
 
 if __name__ == '__main__':
     

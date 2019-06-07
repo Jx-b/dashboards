@@ -69,12 +69,13 @@ class Dash_PCA(dash.Dash):
             dcc.Graph(
                     id='3d scatter',
                     figure= self.plot_pca(self.projected_data, self.variance_explained, self.labels.iloc[:,0]),
+                    config=dict(showSendToCloud=True),
                     style= {'grid-area': 'pca'}
             ),
             
             html.Div([
                 html.H4(children='Data table'),
-                self.generate_table(self.labelled_data)
+                self.generate_table(self.labels)
                 ], 
                 style= {'grid-area': 'table'}
 
@@ -100,7 +101,8 @@ class Dash_PCA(dash.Dash):
         pca = PCA(n_components=None)    
         pca.fit(norm_data)
         variance_explained = pca.explained_variance_ratio_ * 100
-        projected_data = pd.DataFrame(pca.transform(norm_data), columns= ['PC'+str(i+1) for i in range(len(pca.explained_variance_ratio_))])
+        projected_data = pd.DataFrame(pca.transform(norm_data), index= data.index, 
+                                      columns= ['PC'+str(i+1) for i in range(len(pca.explained_variance_ratio_))])
         components = pd.DataFrame(pca.components_, columns=norm_data.columns)
 
         return projected_data, variance_explained, components
@@ -133,6 +135,7 @@ class Dash_PCA(dash.Dash):
                         marker= {
                             'size': 10,
                             'color': color_by,
+                            'colorscale': 'Viridis',
                             'opacity': .8,
                         },
                         name= color_by.name
@@ -205,7 +208,7 @@ class Dash_PCA(dash.Dash):
         """Generate a html table displaying the content of a pandas dataframe"""
         table = dash_table.DataTable(
             id= 'table',
-            columns= [{"name": i, "id": i} for i in dataframe.columns],
+            columns= [{"name": i, "id": i, 'deletable': True} for i in dataframe.columns],
             data= dataframe.to_dict("rows"),
             sorting=True,
             filtering=True,

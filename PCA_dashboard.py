@@ -19,12 +19,12 @@ class Dash_PCA(dash.Dash):
     
     external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
     
-    def __init__(self, data, labels, zscore= True):
+    def __init__(self, data, labels):
         super().__init__(__name__, external_stylesheets= self.external_stylesheets)
         self.title = 'PCA analysis'
         self.labels = labels
         self.labelled_data = pd.DataFrame.join(data, labels)
-        self.projected_data, self.variance_explained, self.components = self.perform_pca(data, zscore)
+        self.projected_data, self.variance_explained, self.components = self.perform_pca(data)
 
         #Create layout
         self.layout = html.Div([    

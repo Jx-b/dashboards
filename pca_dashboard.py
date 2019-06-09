@@ -14,20 +14,22 @@ from sklearn import datasets
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 
+import json
 
 class Dash_PCA(dash.Dash):
     
     external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
     
-    def __init__(self, data, labels, zscore= True):
+    def __init__(self, data, labels):
         super().__init__(__name__, external_stylesheets= self.external_stylesheets)
         self.title = 'PCA analysis'
         self.labels = labels
         self.labelled_data = pd.DataFrame.join(data, labels)
-        self.projected_data, self.variance_explained, self.components = self.perform_pca(data, zscore)
+        self.projected_data, self.variance_explained, self.components = self.perform_pca(data)
 
         #Create layout
         self.layout = html.Div([    
+            dcc.Store(id='pca_storage', data={}),
             
             html.Div([
                         html.H4('Feature scaling (zscore)'),
@@ -204,8 +206,9 @@ class Dash_PCA(dash.Dash):
 
         return figure
 
-    def generate_table(self, dataframe):
+    def generate_table(self, df):
         """Generate a html table displaying the content of a pandas dataframe"""
+        dataframe = df.reset_index()
         table = dash_table.DataTable(
             id= 'table',
             columns= [{"name": i, "id": i, 'deletable': True} for i in dataframe.columns],
@@ -231,42 +234,57 @@ def run_dashboard(data, labels):
     labels: a pandas dataFrame whose columns contain the labels, the index must be identical to data
     """
     ### Create App ###
-    pca_app = Dash_PCA(data, labels)
+    app = Dash_PCA(data, labels)
     
     ### Add Interactivity ###
-    @pca_app.callback(
-        dash.dependencies.Output('histo_var', 'figure'),
+    @app.callback(
+        dash.dependencies.Output('pca_storage', 'data'),
         [dash.dependencies.Input('scaling_radio', 'value')])
     def update_pca(scaling):
         #recompute pca
         zscore = True if scaling == 'On' else False
-        pca_app.projected_data, pca_app.variance_explained, pca_app.components = pca_app.perform_pca(data, zscore)
-        #update graphs
-        histo = pca_app.plot_var(pca_app.variance_explained)
-        return histo
+        projected_data, variance_explained, components = app.perform_pca(data, zscore)
+        pca_results = { 
+            'projected_data': projected_data.to_json(), 
+            'variance_explained': json.dumps(variance_explained.tolist()),
+            'components': components.to_json()
+                      }
+        return pca_results
+        
+    @app.callback(
+        dash.dependencies.Output('histo_var', 'figure'),
+        [dash.dependencies.Input('pca_storage', 'data')])
+    def update_var_plot(pca_results):
+        variance_explained = json.loads(pca_results['variance_explained'])
+        return app.plot_var(variance_explained)
     
-    @pca_app.callback(
+    @app.callback(
         dash.dependencies.Output('colorby_dropdown', 'value'),
         [dash.dependencies.Input('histo_coef', 'clickData')])
     def select_feature(clickData):
         if clickData:
             return clickData['points'][0]['x']
         else:
-            return pca_app.labels.columns[0]
+            return app.labels.columns[0]
     
-    @pca_app.callback(
+    @app.callback(
         [dash.dependencies.Output('histo_coef', 'figure'), dash.dependencies.Output('3d scatter', 'figure')],
         [dash.dependencies.Input('colorby_dropdown', 'value'),
          dash.dependencies.Input('histo_var', 'selectedData'), 
-         dash.dependencies.Input('histo_var', 'figure')])
-    def update_coloring(dropdown_value, selectedPC, _):
+         dash.dependencies.Input('pca_storage', 'data')])
+    def update_coloring(dropdown_value, selectedPC, pca_results):
         PC = selectedPC['points'][0]['pointIndex'] if selectedPC else 0
-        histo = pca_app.plot_coef(pca_app.components, PC, dropdown_value)
-        scatter = pca_app.plot_pca(pca_app.projected_data, pca_app.variance_explained, pca_app.labelled_data.loc[:,dropdown_value])
+        #read json data from pca_results
+        projected_data = pd.read_json(pca_results['projected_data'])
+        variance_explained = json.loads(pca_results['variance_explained'])
+        components = pd.read_json(pca_results['components'])
+        #update graphs
+        histo = app.plot_coef(components, PC, dropdown_value)
+        scatter = app.plot_pca(projected_data, variance_explained, app.labelled_data.loc[:,dropdown_value])
         return [histo, scatter]
 
     #link table to scatter plot
-    @pca_app.callback(
+    @app.callback(
         dash.dependencies.Output('table', 'style_data_conditional'),
         [dash.dependencies.Input('3d scatter', 'clickData'), dash.dependencies.Input('table', 'derived_virtual_indices')])
     def highlight_row(clickData, rows):
@@ -281,7 +299,7 @@ def run_dashboard(data, labels):
                 'color': 'white'
             }]
     
-    pca_app.run_server(debug=False)
+    app.run_server(debug=True)
 
 if __name__ == '__main__':
     

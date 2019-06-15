@@ -19,7 +19,7 @@ import json
 class Dash_PCA(dash.Dash):
     
     external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
-    
+    nb_of_components = 20
     def __init__(self, data, labels):
         super().__init__(__name__, external_stylesheets= self.external_stylesheets)
         self.title = 'PCA analysis'
@@ -92,7 +92,7 @@ class Dash_PCA(dash.Dash):
                     }
     )
         
-    def perform_pca(self, data, zscore=True, max_components=10):
+    def perform_pca(self, data, zscore=True, max_components=nb_of_components):
         """Performs principal component analysis on a dataframe"""
         
         if zscore:
@@ -187,7 +187,7 @@ class Dash_PCA(dash.Dash):
                 }
         return figure
     
-    def plot_coef(self, component, selectedData= None, max_bar_to_plot=10):
+    def plot_coef(self, component, selectedData= None, max_bar_to_plot=nb_of_components):
         """Plots a bar chart of the coeficient attached to each feature for the selected principal component"""
         sort_comp = component.sort_values(ascending=False)
         if len(sort_comp)>max_bar_to_plot:
@@ -307,7 +307,8 @@ def run_dashboard(data, labels):
     def highlight_row(clickData, rows):
         if clickData:
             try:
-                row = rows.index(clickData['points'][0]['text'])
+                clicked_index = app.labels.index.get_loc(clickData['points'][0]['text'])
+                row = rows.index(clicked_index)
             except ValueError:
                 return []
             return [{
@@ -321,10 +322,10 @@ def run_dashboard(data, labels):
 if __name__ == '__main__':
     
     # Import data
-    iris_data = datasets.load_iris()
-    data = pd.DataFrame(iris_data['data'], columns= iris_data['feature_names'])
-    labels = pd.DataFrame(iris_data['target'], columns = ['class']).apply(lambda x : iris_data['target_names'][x])
-    labels['class_num'] = iris_data['target']
+    example_data = datasets.load_iris()
+    dataset = pd.DataFrame(example_data['data'], columns= example_data['feature_names'])
+    labels = pd.DataFrame(example_data['target'], columns = ['class']).apply(lambda x : example_data['target_names'][x])
+    labels['class_num'] = example_data['target']
 
     # Create App
-    run_dashboard(data, labels)
+    run_dashboard(dataset, labels)

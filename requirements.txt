@@ -1,0 +1,7 @@
+numpy>=1.16.4
+pandas>=0.24.2
+plotly>=3.10.0
+dash>=0.43.0
+dash-table>=3.7.0
+scikit-learn>=0.21.2
+umap-learn>=0.3.9

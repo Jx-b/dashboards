@@ -140,7 +140,7 @@ class Dash_UMAP(dash.Dash):
     )
         
     def normalise(self, data):
-        return pd.DataFrame(StandardScaler().fit_transform(data), columns=data.columns)
+        return pd.DataFrame(StandardScaler().fit_transform(data), columns=data.columns, index=data.index)
     
     def perform_umap(self, data, n_neighbors= 15, min_dist= 0.1, metric= 'euclidean'):
         reducer = umap.UMAP(n_neighbors= n_neighbors, min_dist= min_dist, metric= metric, n_components= 2)
@@ -219,7 +219,7 @@ class Dash_UMAP(dash.Dash):
 def run_dashboard(data, labels):
     """Creates a dashboard for visual exploration of UMAP analysis
     
-    data: a pandas dataFrame whose columns contain the features on which to perform PCA
+    data: a pandas dataFrame whose columns contain the features on which to perform UMAP
     labels: a pandas dataFrame whose columns contain the labels, the index must be identical to data
     """
     ### Create App ###
@@ -273,10 +273,10 @@ def run_dashboard(data, labels):
 if __name__ == '__main__':
     
     # Import data
-    iris_data = datasets.load_iris()
-    data = pd.DataFrame(iris_data['data'], columns= iris_data['feature_names'])
-    labels = pd.DataFrame(iris_data['target'], columns = ['class']).apply(lambda x : iris_data['target_names'][x])
-    labels['class_num'] = iris_data['target']
+    example_data = datasets.load_iris()
+    dataset = pd.DataFrame(example_data['data'], columns = example_data['feature_names'])
+    labels = pd.DataFrame(example_data['target'], columns = ['class']).apply(lambda x : example_data['target_names'][x])
+    labels['class_num'] = example_data['target']
 
     # Create App
-    run_dashboard(data, labels)
+    run_dashboard(dataset, labels)

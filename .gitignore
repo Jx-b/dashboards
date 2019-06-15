@@ -1,3 +1,4 @@
-PCA_dashboard.ipynb
+*.ipynb
 .ipynb_checkpoints
 __pycache__
+
